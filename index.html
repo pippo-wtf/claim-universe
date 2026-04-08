@@ -454,6 +454,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
     }
     </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
     /* ====================================================
@@ -1265,7 +1266,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
     function exportJSON() {
         const data = {
             categories: Object.fromEntries(Object.entries(CATEGORIES).map(([k, v]) => [k, { label: v.label }])),
-            nodes: state.nodes.map(n => ({ id: n.id, type: n.type, label: n.label, category: n.category, x: n.x, y: n.y, fx: n.fx, fy: n.fy })),
+            nodes: state.nodes.map(n => ({ id: n.id, type: n.type, label: n.label, category: n.category, x: n.x, y: n.y, fx: n.fx, fy: n.fy, color: n.color || null, manualSize: n.manualSize || null })),
             links: state.links.map(l => ({ source: srcId(l), target: tgtId(l), type: l.type })),
             nextId: state.nextId,
             exported: new Date().toISOString()
@@ -1378,8 +1379,85 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         simulation.alpha(0.5).restart();
     });
 
+    // ---- Supabase Real-Time Sync ----
+    const SUPABASE_URL = 'https://fotxrawsvpqwngwbjpir.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_qoVVXGCdeOnuY9-jTOh84g_83zDSub0';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let syncPaused = false; // prevent echo when we receive our own update
+
+    // Serialize current graph state to a plain object
+    function getSnapshot() {
+        return {
+            categories: Object.fromEntries(Object.entries(CATEGORIES).map(([k, v]) => [k, { label: v.label }])),
+            nodes: state.nodes.map(n => ({ id: n.id, type: n.type, label: n.label, category: n.category, x: n.x, y: n.y, fx: n.fx, fy: n.fy, color: n.color || null, manualSize: n.manualSize || null })),
+            links: state.links.map(l => ({ source: srcId(l), target: tgtId(l), type: l.type })),
+            nextId: state.nextId
+        };
+    }
+
+    // Restore graph state from a snapshot object
+    function loadSnapshot(data) {
+        if (!data || !data.nodes) return false;
+        // Restore categories
+        if (data.categories) {
+            for (const k of Object.keys(CATEGORIES)) delete CATEGORIES[k];
+            for (const [k, v] of Object.entries(data.categories)) {
+                CATEGORIES[k] = { label: v.label };
+            }
+        }
+        redistributeAngles();
+        rebuildCategorySelect();
+        state.nodes = data.nodes || [];
+        state.links = data.links || [];
+        state.nextId = data.nextId || 100;
+        state.selectedNode = null;
+        state.connectMode = false;
+        focusedCluster = null;
+        const center = state.nodes.find(n => n.type === 'center');
+        if (center) { center.fx = W / 2; center.fy = H / 2; }
+        deselect();
+        updateGraph();
+        simulation.alpha(0.5).restart();
+        return true;
+    }
+
+    // Save current state to Supabase (debounced)
+    let saveTimer = null;
+    function saveToCloud() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+            syncPaused = true;
+            await sb.from('graph_state').update({
+                state: getSnapshot(),
+                updated_at: new Date().toISOString()
+            }).eq('id', 1);
+            setTimeout(() => { syncPaused = false; }, 500);
+        }, 400); // 400ms debounce
+    }
+
+    // Listen for real-time changes from other users
+    sb.channel('graph-sync')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'graph_state' }, (payload) => {
+            if (syncPaused) return; // ignore our own writes
+            const data = payload.new.state;
+            if (data) loadSnapshot(data);
+        })
+        .subscribe();
+
+    // Hook into all state-changing functions to auto-save
+    const _origUpdateGraph = updateGraph;
+    let graphDirty = false;
+    updateGraph = function() {
+        _origUpdateGraph();
+        // Mark dirty — save after simulation settles
+        if (!graphDirty) {
+            graphDirty = true;
+            setTimeout(() => { graphDirty = false; saveToCloud(); }, 600);
+        }
+    };
+
     // ---- Initialize ----
-    function init() {
+    function initDefault() {
         rebuildCategorySelect();
 
         // Center
@@ -1412,6 +1490,19 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
 
         updateGraph();
         simulation.alpha(1).restart();
+    }
+
+    // Load from cloud, fall back to default seed data
+    async function init() {
+        rebuildCategorySelect();
+        const { data } = await sb.from('graph_state').select('state').eq('id', 1).single();
+        if (data && data.state && data.state.nodes && data.state.nodes.length > 0) {
+            loadSnapshot(data.state);
+        } else {
+            initDefault();
+            // Save the initial seed to cloud
+            saveToCloud();
+        }
     }
 
     // Start only after password gate is passed

@@ -1381,7 +1381,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
 
     // ---- Supabase Real-Time Sync ----
     const SUPABASE_URL = 'https://fotxrawsvpqwngwbjpir.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_qoVVXGCdeOnuY9-jTOh84g_83zDSub0';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvdHhyYXdzdnBxd25nd2JqcGlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NDE2NTEsImV4cCI6MjA5MTIxNzY1MX0.5umOtrmfht_-o8a96CTvrUw9KBuQjqPvatzJj8sS07w';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let syncPaused = false; // prevent echo when we receive our own update
 
@@ -1428,8 +1428,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         saveTimer = setTimeout(async () => {
             syncPaused = true;
             await sb.from('graph_state').update({
-                state: getSnapshot(),
-                updated_at: new Date().toISOString()
+                state: getSnapshot()
             }).eq('id', 1);
             setTimeout(() => { syncPaused = false; }, 500);
         }, 400); // 400ms debounce

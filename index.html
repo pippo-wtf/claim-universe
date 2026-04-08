@@ -276,6 +276,7 @@
         .node-center { cursor: default; }
 
         /* Node labels */
+        .label-fo { overflow: visible; }
         .node-label {
             color: #fff;
             font-family: 'Mont AS', 'Helvetica Neue', Arial, sans-serif;
@@ -964,7 +965,8 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             .attr('x', d => -labelW(d) / 2)
             .attr('y', d => nodeRadius(d) + 6)
             .attr('width', d => labelW(d))
-            .attr('height', 200);
+            .attr('height', 500)
+            .style('overflow', 'visible');
         all.select('.node-label')
             .text(d => d.label.replace('\n', ' '))
             .style('font-size', d => (d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10) + 'px')

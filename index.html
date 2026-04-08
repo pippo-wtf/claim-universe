@@ -549,6 +549,23 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         ).length;
     }
 
+    // Word-wrap text into lines of ~maxChars
+    function wrapText(text, maxChars) {
+        const words = text.split(/\s+/);
+        const lines = [];
+        let current = '';
+        for (const w of words) {
+            if (current && (current.length + 1 + w.length) > maxChars) {
+                lines.push(current);
+                current = w;
+            } else {
+                current = current ? current + ' ' + w : w;
+            }
+        }
+        if (current) lines.push(current);
+        return lines;
+    }
+
     function srcId(l) { return l.source.id != null ? l.source.id : l.source; }
     function tgtId(l) { return l.target.id != null ? l.target.id : l.target; }
 
@@ -741,7 +758,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
 
         // Rebuild center + categories
         state.nodes.push({
-            id: 'center', type: 'center', label: 'Strategische\nPartnerschaften',
+            id: 'center', type: 'center', label: 'Die Premium Gruppe ist ein Zugang',
             category: null, fx: W / 2, fy: H / 2
         });
         for (const [key, cat] of Object.entries(CATEGORIES)) {
@@ -926,25 +943,22 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
                 return `drop-shadow(0 0 ${blur}px ${d.color})`;
             });
 
-        // Labels — all placed below their node
+        // Labels — all placed below their node, auto-wrapped
         all.select('text').each(function(d) {
             const el = d3.select(this);
             el.selectAll('tspan').remove();
-            if (d.type === 'center') {
-                const r = nodeRadius(d);
-                const lines = d.label.split('\n');
-                lines.forEach((line, i) => {
-                    el.append('tspan')
-                        .attr('x', 0)
-                        .attr('dy', i === 0 ? (r + 16) + 'px' : '1.2em')
-                        .attr('font-weight', 700)
-                        .attr('font-size', '12px')
-                        .text(line);
-                });
-            } else {
-                el.attr('dy', nodeRadius(d) + 14)
-                    .text(d.label);
-            }
+            const r = nodeRadius(d);
+            const fontSize = d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10;
+            const maxChars = d.type === 'center' ? 18 : d.type === 'category' ? 16 : 14;
+            const lines = wrapText(d.label.replace('\n', ' '), maxChars);
+            lines.forEach((line, i) => {
+                el.append('tspan')
+                    .attr('x', 0)
+                    .attr('dy', i === 0 ? (r + 14) + 'px' : '1.2em')
+                    .attr('font-weight', d.type === 'center' ? 700 : 400)
+                    .attr('font-size', fontSize + 'px')
+                    .text(line);
+            });
         });
 
         // Update simulation — reinitialize cluster targets so new nodes get correct gravity
@@ -1461,7 +1475,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
 
         // Center
         state.nodes.push({
-            id: 'center', type: 'center', label: 'Strategische\nPartnerschaften',
+            id: 'center', type: 'center', label: 'Die Premium Gruppe ist ein Zugang',
             category: null, fx: W / 2, fy: H / 2
         });
 

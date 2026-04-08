@@ -693,7 +693,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
                 return 60;
             })
             .strength(d => {
-                if (d.type === 'structural') return 0.08;
+                if (d.type === 'structural') return 0.2;
                 if (d.type === 'category') return 0.12;
                 return 0.15;  // manual links slightly stronger so connected words stay together
             })
@@ -734,10 +734,10 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
     // Cluster strength: how hard each node is pulled toward its cluster
     function clusterStrength(d) {
         if (d.type === 'center') return 0;  // center is pinned with fx/fy, no pull needed
-        if (d.type === 'category') return 0.06;  // hold circular positions firmly
-        // Words: weaker pull if they have manual connections (bridge nodes float between clusters)
+        if (d.type === 'category') return 0.15;  // hold circular positions firmly against collision
+        // Words: moderate pull, weaker if they have manual connections (bridge nodes float)
         const mc = manualConns(d.id);
-        return mc > 0 ? 0.005 : 0.025;
+        return mc > 0 ? 0.02 : 0.08;
     }
 
     // Override cluster forces during drag so connected nodes follow freely

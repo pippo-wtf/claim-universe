@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Universe — Premium Gruppe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Mont AS', 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* --- Header --- */
+        #header {
+            position: fixed;
+            top: 24px;
+            left: 32px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .brand {
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #7C3AED;
+            font-weight: 700;
+        }
+        .title {
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            margin-top: 2px;
+            line-height: 1.1;
+        }
+        .title span { color: #7C3AED; }
+
+        /* --- Top-right area --- */
+        #top-right {
+            position: fixed;
+            top: 24px;
+            right: 32px;
+            z-index: 10;
+            text-align: right;
+        }
+        #top-right .hint {
+            font-size: 12px;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        #top-right .export-row {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+        .btn-small {
+            background: #111;
+            border: 1px solid #282828;
+            color: #666;
+            font-family: inherit;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .btn-small:hover { border-color: #7C3AED; color: #fff; }
+
+        /* --- Controls (bottom-left) --- */
+        #controls {
+            position: fixed;
+            bottom: 24px;
+            left: 32px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #controls input, #controls select {
+            background: #0a0a0a;
+            border: 1px solid #282828;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #controls input:focus, #controls select:focus { border-color: #7C3AED; }
+        #controls input { width: 220px; }
+        #controls select { min-width: 160px; }
+        .btn-add {
+            background: #7C3AED;
+            border: none;
+            color: #fff;
+            font-family: inherit;
+            font-size: 18px;
+            font-weight: 700;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+        .btn-add:hover { background: #0000DD; }
+        .btn-import {
+            background: transparent;
+            border: 1px solid #282828;
+            color: #555;
+            font-family: inherit;
+            font-size: 12px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .btn-import:hover { border-color: #7C3AED; color: #fff; }
+
+        /* --- Context panel (bottom-right) --- */
+        #context {
+            position: fixed;
+            bottom: 24px;
+            right: 32px;
+            z-index: 10;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        #context .node-name {
+            color: #7C3AED;
+            font-weight: 700;
+            font-size: 14px;
+            margin-right: 4px;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .btn-ctx {
+            background: #0a0a0a;
+            border: 1px solid #282828;
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .btn-ctx:hover { border-color: #7C3AED; }
+        .btn-ctx.danger:hover { border-color: #ff3333; color: #ff3333; }
+
+        /* --- Connect mode bar --- */
+        #connect-bar {
+            display: none;
+            position: fixed;
+            bottom: 74px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #7C3AED;
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* --- Bulk import modal --- */
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 99;
+        }
+        #bulk-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #111;
+            border: 1px solid #282828;
+            border-radius: 12px;
+            padding: 28px;
+            z-index: 100;
+            width: 520px;
+        }
+        #bulk-modal h3 { font-size: 16px; margin-bottom: 6px; }
+        #bulk-modal p { color: #555; font-size: 12px; margin-bottom: 14px; line-height: 1.5; }
+        #bulk-modal textarea {
+            width: 100%;
+            height: 160px;
+            background: #0a0a0a;
+            border: 1px solid #282828;
+            color: #fff;
+            font-family: 'Mont AS', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 13px;
+            padding: 14px;
+            border-radius: 6px;
+            resize: vertical;
+            outline: none;
+        }
+        #bulk-modal textarea:focus { border-color: #7C3AED; }
+        #bulk-modal .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .btn-modal {
+            background: #0a0a0a;
+            border: 1px solid #282828;
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn-modal.primary { background: #7C3AED; border-color: #7C3AED; font-weight: 700; }
+
+        /* --- Drag-over state --- */
+        body.dragover::after {
+            content: 'Foto hier ablegen';
+            position: fixed;
+            inset: 0;
+            background: rgba(124,58,237,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: #7C3AED;
+            z-index: 200;
+            pointer-events: none;
+            border: 3px dashed rgba(124,58,237,0.4);
+        }
+
+        /* --- SVG --- */
+        svg { display: block; }
+        .node { cursor: grab; }
+        .node:active { cursor: grabbing; }
+        .node-center { cursor: default; }
+
+        /* Gravitationswort pulse animation */
+        @keyframes gravPulse {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* --- Password gate --- */
+        #pw-gate {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+        #pw-gate .brand { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #7C3AED; font-weight: 700; }
+        #pw-gate .title { font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 12px; }
+        #pw-gate .title span { color: #7C3AED; }
+        #pw-gate input {
+            background: #0a0a0a;
+            border: 1px solid #282828;
+            color: #fff;
+            font-family: inherit;
+            font-size: 15px;
+            padding: 12px 18px;
+            border-radius: 6px;
+            outline: none;
+            width: 280px;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        #pw-gate input:focus { border-color: #7C3AED; }
+        #pw-gate button {
+            background: #7C3AED;
+            border: none;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 10px 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        #pw-gate button:hover { background: #6D28D9; }
+        #pw-gate .error { color: #ff3333; font-size: 12px; height: 16px; }
+        .app-hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Password gate -->
+    <div id="pw-gate">
+        <div class="brand">Premium Gruppe</div>
+        <div class="title">Claim Universe<span>_</span></div>
+        <input type="password" id="pw-input" placeholder="Passwort eingeben..." autocomplete="off" />
+        <button onclick="checkPassword()">Zugang</button>
+        <div class="error" id="pw-error"></div>
+    </div>
+
+    <!-- Header -->
+    <div id="header" class="app-hidden">
+        <div class="brand">Premium Gruppe</div>
+        <div class="title">Claim Universe<span>_</span></div>
+    </div>
+
+    <!-- Top-right: hints + export -->
+    <div id="top-right" class="app-hidden">
+        <div class="hint">
+            Ziehen · Klicken · C = Verbinden · Größer = mehr Verbindungen
+        </div>
+        <div class="export-row">
+            <button class="btn-small" onclick="resetGraph()" style="border-color:#ff3333;color:#ff3333;">Reset</button>
+            <button class="btn-small" onclick="shuffle()" style="border-color:#7C3AED;color:#7C3AED;">Neu mischen</button>
+            <button class="btn-small" onclick="exportPNG()">PNG</button>
+            <button class="btn-small" onclick="exportJSON()">JSON</button>
+            <button class="btn-small" onclick="importJSON()">Laden</button>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls" class="app-hidden">
+        <input type="text" id="word-input" placeholder="Neues Wort..." autocomplete="off" spellcheck="false" />
+        <select id="category-select"></select>
+        <button class="btn-add" onclick="addWord()">+</button>
+        <button class="btn-import" onclick="showBulkImport()">Import</button>
+        <button class="btn-import" onclick="showAddCategory()" title="Neue Kategorie">+ Kategorie</button>
+    </div>
+
+    <!-- Add category modal -->
+    <div id="cat-overlay" onclick="hideAddCategory()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99;"></div>
+    <div id="cat-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:1px solid #282828;border-radius:12px;padding:28px;z-index:100;width:380px;">
+        <h3 style="font-size:16px;margin-bottom:14px;">Neue Kategorie</h3>
+        <input type="text" id="cat-name-input" placeholder="Name der Kategorie..." autocomplete="off" spellcheck="false"
+            style="width:100%;background:#0a0a0a;border:1px solid #282828;color:#fff;font-family:inherit;font-size:14px;padding:10px 14px;border-radius:6px;outline:none;" />
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+            <button class="btn-modal" onclick="hideAddCategory()">Abbrechen</button>
+            <button class="btn-modal primary" onclick="addCategory()">Hinzufügen</button>
+        </div>
+    </div>
+
+    <!-- Context panel -->
+    <div id="context">
+        <span class="node-name" id="ctx-name"></span>
+        <button class="btn-ctx" id="btn-connect" onclick="startConnect()">Verbinden (C)</button>
+        <button class="btn-ctx danger" id="btn-delete" onclick="deleteSelected()">Löschen</button>
+        <button class="btn-ctx" onclick="deselect()">Esc</button>
+    </div>
+
+    <!-- Connect mode indicator -->
+    <div id="connect-bar">Verbindungsmodus — Klicke auf ein zweites Wort</div>
+
+    <!-- Bulk import modal -->
+    <div id="overlay" onclick="hideBulkImport()"></div>
+    <div id="bulk-modal">
+        <h3>Wörter importieren</h3>
+        <p>Eine Kategorie pro Zeile. Format:<br><strong>Kategorie: Wort1, Wort2, Wort3</strong></p>
+        <textarea id="bulk-text" placeholder="Versprechen: Augenhöhe, Zugang, Türöffner
+Reichweite: Entscheider, Sichtbarkeit
+Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
+        <div class="actions">
+            <button class="btn-modal" onclick="hideBulkImport()">Abbrechen</button>
+            <button class="btn-modal primary" onclick="bulkImport()">Importieren</button>
+        </div>
+    </div>
+
+    <!-- Hidden inputs -->
+    <input type="file" id="json-input" accept=".json" style="display:none" />
+
+    <!-- SVG graph -->
+    <svg id="graph" class="app-hidden"></svg>
+
+    <script>
+    // Password gate — SHA-256 hash comparison
+    const PW_HASH = '1ac9dd7341aab04c55e151c21da4ac1222a4c383c2a6303d45733088c02ce2fc';
+
+    async function hashPassword(pw) {
+        const data = new TextEncoder().encode(pw);
+        const buf = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function checkPassword() {
+        const input = document.getElementById('pw-input');
+        const hash = await hashPassword(input.value);
+        if (hash === PW_HASH) {
+            document.getElementById('pw-gate').style.display = 'none';
+            document.querySelectorAll('.app-hidden').forEach(el => el.classList.remove('app-hidden'));
+            // Store in session so refresh doesn't re-ask
+            sessionStorage.setItem('cu-auth', '1');
+            window.dispatchEvent(new Event('cu-unlocked'));
+        } else {
+            document.getElementById('pw-error').textContent = 'Falsches Passwort';
+            input.value = '';
+            input.focus();
+        }
+    }
+
+    // Enter key submits password
+    document.getElementById('pw-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') checkPassword();
+    });
+
+    // Auto-unlock if already authenticated this session
+    if (sessionStorage.getItem('cu-auth') === '1') {
+        document.getElementById('pw-gate').style.display = 'none';
+        document.querySelectorAll('.app-hidden').forEach(el => el.classList.remove('app-hidden'));
+    }
+    </script>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+    /* ====================================================
+       CLAIM UNIVERSE — Premium Gruppe
+       Force-directed word graph for brand claim workshops
+       ==================================================== */
+
+    // ---- State ----
+    const state = {
+        nodes: [],
+        links: [],
+        selectedNode: null,
+        connectMode: false,
+        nextId: 1
+    };
+
+    // ---- Categories (mutable — can add new ones at runtime) ----
+    const CATEGORIES = {
+        versprechen:   { label: 'Versprechen' },
+        reichweite:    { label: 'Reichweite' },
+        kommunikation: { label: 'Kommunikations-Level' }
+    };
+
+    // Recalculate angles evenly whenever categories change
+    function redistributeAngles() {
+        const keys = Object.keys(CATEGORIES);
+        keys.forEach((key, i) => {
+            CATEGORIES[key].angle = -Math.PI / 2 + (2 * Math.PI / keys.length) * i;
+        });
+    }
+    redistributeAngles();
+
+    // Populate the category dropdown from CATEGORIES
+    function rebuildCategorySelect() {
+        const sel = document.getElementById('category-select');
+        sel.innerHTML = '';
+        for (const [key, cat] of Object.entries(CATEGORIES)) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = cat.label;
+            sel.appendChild(opt);
+        }
+    }
+
+    const CATEGORY_ORBIT = 300;
+    const R_CENTER = 44;
+    const R_CATEGORY_BASE = 12;
+    const R_CATEGORY_SCALE = 2;
+    const R_CATEGORY_MAX = 35;
+    const R_WORD_BASE = 5;
+    const R_WORD_SCALE = 7;
+    const R_WORD_MAX = 55;
+    const GRAVITATION_THRESHOLD = 3;
+
+    // Colors — Obsidian graph style: all nodes are solid blue fills
+    const C_BLUE = '#7C3AED';        // purple-blue like Obsidian
+    const C_BLUE_BRIGHT = '#8B5CF6'; // brighter variant for center
+    const C_BLUE_DIM = '#5B21B6';    // dimmer variant for word nodes
+    const C_BG = '#000000';
+    const C_EDGE_STRUCT = '#555555';
+    const C_EDGE_CAT = '#1E1040';
+    const C_EDGE_MANUAL = '#444444';
+
+    // ---- Dimensions ----
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+
+    // ---- Helpers ----
+    function catPos(key) {
+        const a = CATEGORIES[key].angle;
+        return { x: W / 2 + Math.cos(a) * CATEGORY_ORBIT, y: H / 2 + Math.sin(a) * CATEGORY_ORBIT };
+    }
+
+    function nodeRadius(d) {
+        if (d.type === 'center') return R_CENTER;
+        if (d.type === 'category') {
+            const wordCount = state.nodes.filter(n => n.type === 'word' && n.category === d.category).length;
+            return Math.min(R_CATEGORY_BASE + wordCount * R_CATEGORY_SCALE, R_CATEGORY_MAX);
+        }
+        const c = manualConns(d.id);
+        if (c === 0) return R_WORD_BASE;
+        return Math.min(R_WORD_BASE + c * R_WORD_SCALE, R_WORD_MAX);
+    }
+
+    // Count only word↔word connections (not the default category link)
+    function manualConns(id) {
+        return state.links.filter(l =>
+            l.type === 'manual' &&
+            (srcId(l) === id || tgtId(l) === id)
+        ).length;
+    }
+
+    function srcId(l) { return l.source.id != null ? l.source.id : l.source; }
+    function tgtId(l) { return l.target.id != null ? l.target.id : l.target; }
+
+    function isGravitationswort(d) {
+        return d.type === 'word' && manualConns(d.id) >= GRAVITATION_THRESHOLD;
+    }
+
+    function isBridge(d) {
+        if (d.type !== 'word') return false;
+        const peers = state.links
+            .filter(l => l.type === 'manual' && (srcId(l) === d.id || tgtId(l) === d.id))
+            .map(l => {
+                const oid = srcId(l) === d.id ? tgtId(l) : srcId(l);
+                return state.nodes.find(n => n.id === oid);
+            })
+            .filter(n => n && n.type === 'word');
+        const cats = new Set(peers.map(n => n.category));
+        if (cats.size > 1) return true;
+        if (cats.size === 1 && !cats.has(d.category)) return true;
+        return false;
+    }
+
+    // ---- SVG Setup ----
+    const svg = d3.select('#graph').attr('width', W).attr('height', H);
+    const defs = svg.append('defs');
+
+    // Subtle glow for all nodes
+    const fGlowSoft = defs.append('filter').attr('id', 'glowSoft').attr('x', '-80%').attr('y', '-80%').attr('width', '260%').attr('height', '260%');
+    fGlowSoft.append('feGaussianBlur').attr('in', 'SourceGraphic').attr('stdDeviation', '3').attr('result', 'blur');
+    const fMergeSoft = fGlowSoft.append('feMerge');
+    fMergeSoft.append('feMergeNode').attr('in', 'blur');
+    fMergeSoft.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // Stronger glow for Gravitationswörter
+    const fGlow = defs.append('filter').attr('id', 'glow').attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
+    fGlow.append('feGaussianBlur').attr('in', 'SourceGraphic').attr('stdDeviation', '6').attr('result', 'blur');
+    const fMerge = fGlow.append('feMerge');
+    fMerge.append('feMergeNode').attr('in', 'blur');
+    fMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // Center radial gradient
+    const rg = defs.append('radialGradient').attr('id', 'centerGlow');
+    rg.append('stop').attr('offset', '0%').attr('stop-color', '#7C3AED').attr('stop-opacity', 0.25);
+    rg.append('stop').attr('offset', '100%').attr('stop-color', '#7C3AED').attr('stop-opacity', 0);
+
+    // Pulse gradient for Gravitationswörter outer ring
+    const pg = defs.append('radialGradient').attr('id', 'pulseGlow');
+    pg.append('stop').attr('offset', '0%').attr('stop-color', '#7C3AED').attr('stop-opacity', 0.5);
+    pg.append('stop').attr('offset', '100%').attr('stop-color', '#7C3AED').attr('stop-opacity', 0);
+
+    // Zoom container — all graph elements go inside this group
+    const zoomGroup = svg.append('g').attr('class', 'zoom-container');
+
+    // Zoom behavior (scroll/pinch to zoom, drag to pan)
+    const zoom = d3.zoom()
+        .scaleExtent([0.2, 4])
+        .on('zoom', (event) => {
+            zoomGroup.attr('transform', event.transform);
+        });
+    svg.call(zoom);
+    svg.on('dblclick.zoom', null);
+
+    // Background glow (inside zoom container)
+    zoomGroup.append('circle')
+        .attr('cx', W / 2).attr('cy', H / 2).attr('r', 160)
+        .attr('fill', 'url(#centerGlow)');
+
+    // Orbit guides (inside zoom container)
+    const guideGroup = zoomGroup.append('g').attr('class', 'guides');
+    function drawGuides() {
+        guideGroup.selectAll('*').remove();
+        guideGroup.append('circle')
+            .attr('cx', W / 2).attr('cy', H / 2).attr('r', CATEGORY_ORBIT)
+            .attr('fill', 'none').attr('stroke', C_BLUE).attr('stroke-opacity', 0.04)
+            .attr('stroke-dasharray', '4 8').attr('stroke-width', 1);
+        guideGroup.append('circle')
+            .attr('cx', W / 2).attr('cy', H / 2).attr('r', CATEGORY_ORBIT + 130)
+            .attr('fill', 'none').attr('stroke', C_BLUE).attr('stroke-opacity', 0.025)
+            .attr('stroke-dasharray', '4 12').attr('stroke-width', 1);
+    }
+    drawGuides();
+
+    // Layers (inside zoom container)
+    const connectLineGroup = zoomGroup.append('g');
+    const linkGroup = zoomGroup.append('g');
+    const nodeGroup = zoomGroup.append('g');
+
+    // Connect-mode line (cursor follower)
+    const connectLine = connectLineGroup.append('line')
+        .attr('stroke', C_BLUE).attr('stroke-opacity', 0.4)
+        .attr('stroke-width', 1.5).attr('stroke-dasharray', '6 4')
+        .style('display', 'none');
+
+    svg.on('mousemove', function(event) {
+        if (state.connectMode && state.selectedNode) {
+            const [mx, my] = d3.pointer(event);
+            connectLine
+                .attr('x1', state.selectedNode.x).attr('y1', state.selectedNode.y)
+                .attr('x2', mx).attr('y2', my)
+                .style('display', null);
+        }
+    });
+
+    // ---- Force Simulation (Obsidian-style organic layout) ----
+    // Key insight from research: weak links + strong repulsion + gentle cluster gravity = organic feel.
+    // No forceCenter (creates single gravity well). Use forceX/Y for gentle cluster positioning.
+
+    const simulation = d3.forceSimulation()
+        // 1. LINKS — weak springs, not rigid rods
+        .force('link', d3.forceLink().id(d => d.id)
+            .distance(d => {
+                if (d.type === 'structural') return CATEGORY_ORBIT;
+                if (d.type === 'category') return 80;
+                return 60;
+            })
+            .strength(d => {
+                if (d.type === 'structural') return 0.08;
+                if (d.type === 'category') return 0.12;
+                return 0.15;  // manual links slightly stronger so connected words stay together
+            })
+        )
+        // 2. REPULSION — strong, with distance limits for organic spread
+        .force('charge', d3.forceManyBody()
+            .strength(d => {
+                if (d.type === 'center') return -250;
+                if (d.type === 'category') return -200;
+                return -120;
+            })
+            .distanceMin(15)
+            .distanceMax(500)
+        )
+        // 3. CLUSTER GRAVITY — forceX/Y pulls nodes toward their cluster's focal point
+        .force('clusterX', d3.forceX(d => clusterTarget(d).x).strength(d => clusterStrength(d)))
+        .force('clusterY', d3.forceY(d => clusterTarget(d).y).strength(d => clusterStrength(d)))
+        // 4. COLLISION — prevent overlap with good padding
+        .force('collide', d3.forceCollide().radius(d => nodeRadius(d) + 22).strength(0.7).iterations(2))
+        .on('tick', ticked)
+        // 5. SLOW SETTLE — simulation explores longer for better organic layout
+        .alphaDecay(0.008)
+        .velocityDecay(0.4);
+
+    // Cluster targets: where each group's gravity pulls toward
+    // Asymmetric positions to break the triangle pattern
+    function clusterTarget(d) {
+        if (d.type === 'center') return { x: W / 2, y: H / 2 };
+        const cat = d.type === 'category' ? d.category : d.category;
+        if (!cat) return { x: W / 2, y: H / 2 };
+        return catPos(cat);
+    }
+
+    // Cluster strength: how hard each node is pulled toward its cluster
+    function clusterStrength(d) {
+        if (d.type === 'center') return 0;  // center is pinned with fx/fy, no pull needed
+        if (d.type === 'category') return 0.06;  // hold circular positions firmly
+        // Words: weaker pull if they have manual connections (bridge nodes float between clusters)
+        const mc = manualConns(d.id);
+        return mc > 0 ? 0.005 : 0.025;
+    }
+
+    // Override cluster forces during drag so connected nodes follow freely
+    function setDragExemptions(draggingNode) {
+        if (!draggingNode) {
+            // Reset: all nodes use normal cluster strength
+            simulation.force('clusterX').strength(d => clusterStrength(d));
+            simulation.force('clusterY').strength(d => clusterStrength(d));
+            return;
+        }
+        // Exempt dragged node + its manual-link neighbors from cluster pull
+        const exempt = new Set([draggingNode.id]);
+        state.links.forEach(l => {
+            if (l.type !== 'manual') return;
+            const s = srcId(l), t = tgtId(l);
+            if (s === draggingNode.id) exempt.add(t);
+            if (t === draggingNode.id) exempt.add(s);
+        });
+        simulation.force('clusterX').strength(d => exempt.has(d.id) ? 0 : clusterStrength(d));
+        simulation.force('clusterY').strength(d => exempt.has(d.id) ? 0 : clusterStrength(d));
+    }
+
+    // Shuffle: redistribute all word positions around their categories and reheat
+    // Reset: wipe everything, rebuild just the center + categories, no words
+    function resetGraph() {
+        if (!confirm('Alles zurücksetzen? Alle Wörter und Verbindungen werden gelöscht.')) return;
+        state.nodes = [];
+        state.links = [];
+        state.selectedNode = null;
+        state.connectMode = false;
+        state.nextId = 1;
+        focusedCluster = null;
+
+        // Rebuild center + categories
+        state.nodes.push({
+            id: 'center', type: 'center', label: 'Strategische\nPartnerschaften',
+            category: null, fx: W / 2, fy: H / 2
+        });
+        for (const [key, cat] of Object.entries(CATEGORIES)) {
+            const p = catPos(key);
+            state.nodes.push({ id: 'cat-' + key, type: 'category', label: cat.label, category: key, x: p.x, y: p.y });
+            state.links.push({ source: 'center', target: 'cat-' + key, type: 'structural' });
+        }
+
+        deselect();
+        updateGraph();
+        simulation.alpha(1).restart();
+    }
+
+    function shuffle() {
+        for (const n of state.nodes) {
+            if (n.type === 'word') {
+                const cp = catPos(n.category);
+                const a = Math.random() * Math.PI * 2;
+                const d = 40 + Math.random() * 80;
+                n.x = cp.x + Math.cos(a) * d;
+                n.y = cp.y + Math.sin(a) * d;
+                n.vx = 0; n.vy = 0;
+            }
+            if (n.type === 'category') {
+                const p = catPos(n.category);
+                n.x = p.x; n.y = p.y;
+                n.vx = 0; n.vy = 0;
+            }
+        }
+        simulation.alpha(1).restart();
+    }
+
+    // ---- Focus state: which nodes are "lit up" ----
+    let focusedCluster = null; // null = show all, otherwise Set of node ids
+
+    function buildCluster(d) {
+        // Find all nodes connected to d (directly)
+        const ids = new Set([d.id]);
+        state.links.forEach(l => {
+            const s = srcId(l), t = tgtId(l);
+            if (s === d.id) ids.add(t);
+            if (t === d.id) ids.add(s);
+        });
+        // If d is a category, also include all words in that category
+        if (d.type === 'category') {
+            state.nodes.forEach(n => {
+                if (n.type === 'word' && n.category === d.category) ids.add(n.id);
+            });
+        }
+        // If d is a word, include its category
+        if (d.type === 'word') {
+            ids.add('cat-' + d.category);
+        }
+        // Always include center
+        ids.add('center');
+        return ids;
+    }
+
+    // ---- Drag ----
+    const drag = d3.drag()
+        .on('start', (event, d) => {
+            if (d.type === 'center') return;
+            if (!event.active) simulation.alphaTarget(0.15).restart();
+            d.fx = d.x; d.fy = d.y; d._dragging = true;
+            setDragExemptions(d);
+            focusedCluster = buildCluster(d);
+            applyFocus();
+        })
+        .on('drag', (event, d) => {
+            if (d.type === 'center') return;
+            d.fx = event.x; d.fy = event.y;
+        })
+        .on('end', (event, d) => {
+            if (d.type === 'center') return;
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null; d.fy = null; d._dragging = false;
+            setDragExemptions(null);
+            focusedCluster = null;
+            applyFocus();
+        });
+
+    function applyFocus() {
+        if (!focusedCluster) {
+            // Reset everything to full visibility
+            nodeGroup.selectAll('.node').attr('opacity', 1);
+            nodeGroup.selectAll('.node text').attr('opacity', 1);
+            linkGroup.selectAll('line').attr('opacity', null);
+            return;
+        }
+        // Dim non-cluster nodes, brighten cluster
+        nodeGroup.selectAll('.node')
+            .attr('opacity', d => focusedCluster.has(d.id) ? 1 : 0.12);
+        nodeGroup.selectAll('.node text')
+            .attr('opacity', d => focusedCluster.has(d.id) ? 1 : 0.08);
+        linkGroup.selectAll('line')
+            .attr('opacity', d => {
+                const s = srcId(d), t = tgtId(d);
+                return focusedCluster.has(s) && focusedCluster.has(t) ? 0.6 : 0.03;
+            });
+    }
+
+    // ---- Rendering ----
+    function updateGraph() {
+        // --- Links ---
+        const link = linkGroup.selectAll('line').data(state.links, d => srcId(d) + '-' + tgtId(d) + '-' + d.type);
+        link.exit().remove();
+        link.enter().append('line').merge(link)
+            .attr('stroke', d => d.type === 'structural' ? C_EDGE_STRUCT : d.type === 'manual' ? C_EDGE_MANUAL : 'none')
+            .attr('stroke-opacity', d => d.type === 'structural' ? 0.35 : d.type === 'manual' ? 0.4 : 0)
+            .attr('stroke-width', d => d.type === 'structural' ? 1.5 : d.type === 'manual' ? 1.5 : 0);
+
+        // --- Nodes ---
+        const node = nodeGroup.selectAll('.node').data(state.nodes, d => d.id);
+        node.exit().remove();
+
+        const enter = node.enter().append('g')
+            .attr('class', d => 'node node-' + d.type)
+            .call(drag)
+            .on('click', nodeClicked);
+
+        // Pulse ring (for Gravitationswörter)
+        enter.append('circle').attr('class', 'pulse-ring')
+            .attr('fill', 'none').attr('stroke', C_BLUE).attr('stroke-width', 2);
+
+        // Main circle
+        enter.append('circle').attr('class', 'main-circle');
+
+        // Selection ring
+        enter.append('circle').attr('class', 'sel-ring')
+            .attr('fill', 'none').attr('stroke', C_BLUE).attr('stroke-width', 2.5)
+            .attr('opacity', 0);
+
+        // Label
+        enter.append('text')
+            .attr('fill', '#fff')
+            .attr('text-anchor', 'middle')
+            .attr('pointer-events', 'none')
+            .attr('font-size', d => d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10);
+
+        // Update all
+        const all = nodeGroup.selectAll('.node');
+
+        all.select('.main-circle')
+            .attr('r', d => nodeRadius(d))
+            .attr('fill', d => {
+                if (d.type === 'center') return C_BLUE_BRIGHT;
+                if (d.type === 'category') return C_BLUE;
+                return C_BLUE_DIM;
+            })
+            .attr('stroke', 'none')
+            .attr('stroke-width', 0);
+
+        // Selection ring
+        all.select('.sel-ring')
+            .attr('r', d => nodeRadius(d) + 6)
+            .attr('opacity', d => state.selectedNode && state.selectedNode.id === d.id ? 1 : 0);
+
+        // Pulse ring for Gravitationswörter
+        all.select('.pulse-ring')
+            .attr('r', d => nodeRadius(d) + 10)
+            .attr('stroke-opacity', d => isGravitationswort(d) ? 0.5 : 0)
+            .style('animation', d => isGravitationswort(d) ? 'gravPulse 2.5s ease-in-out infinite' : 'none');
+
+        // Glow filter
+        all.select('.main-circle')
+            .attr('filter', d => isGravitationswort(d) ? 'url(#glow)' : 'url(#glowSoft)');
+
+        // Labels — all placed below their node
+        all.select('text').each(function(d) {
+            const el = d3.select(this);
+            el.selectAll('tspan').remove();
+            if (d.type === 'center') {
+                const r = nodeRadius(d);
+                const lines = ['Strategische', 'Partnerschaften'];
+                lines.forEach((line, i) => {
+                    el.append('tspan')
+                        .attr('x', 0)
+                        .attr('dy', i === 0 ? (r + 16) + 'px' : '1.2em')
+                        .attr('font-weight', 700)
+                        .attr('font-size', '12px')
+                        .text(line);
+                });
+            } else {
+                el.attr('dy', nodeRadius(d) + 14)
+                    .text(d.label);
+            }
+        });
+
+        // Update simulation — reinitialize cluster targets so new nodes get correct gravity
+        simulation.nodes(state.nodes);
+        simulation.force('link').links(state.links);
+        simulation.force('collide').radius(d => nodeRadius(d) + 22);
+        simulation.force('clusterX').x(d => clusterTarget(d).x).strength(d => clusterStrength(d));
+        simulation.force('clusterY').y(d => clusterTarget(d).y).strength(d => clusterStrength(d));
+    }
+
+    function ticked() {
+        linkGroup.selectAll('line')
+            .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+        nodeGroup.selectAll('.node')
+            .attr('transform', d => `translate(${d.x},${d.y})`);
+    }
+
+    // ---- Click ----
+    function nodeClicked(event, d) {
+        event.stopPropagation();
+
+        if (state.connectMode && state.selectedNode) {
+            if (d.id !== state.selectedNode.id && d.type !== 'center') {
+                addManualLinkById(state.selectedNode.id, d.id);
+            }
+            exitConnectMode();
+            return;
+        }
+
+        if (state.selectedNode && state.selectedNode.id === d.id) {
+            deselect();
+        } else {
+            selectNode(d);
+        }
+    }
+
+    svg.on('click', () => {
+        if (state.connectMode) exitConnectMode();
+        else deselect();
+    });
+
+    // ---- Selection ----
+    function selectNode(d) {
+        state.selectedNode = d;
+        const ctx = document.getElementById('context');
+        ctx.style.display = 'flex';
+        document.getElementById('ctx-name').textContent = d.label.replace('\n', ' ');
+        document.getElementById('btn-delete').style.display = (d.type === 'word') ? '' : 'none';
+        document.getElementById('btn-connect').style.display = (d.type === 'center') ? 'none' : '';
+        updateGraph();
+    }
+
+    function deselect() {
+        state.selectedNode = null;
+        state.connectMode = false;
+        document.getElementById('context').style.display = 'none';
+        document.getElementById('connect-bar').style.display = 'none';
+        connectLine.style('display', 'none');
+        updateGraph();
+    }
+
+    function startConnect() {
+        if (!state.selectedNode) return;
+        state.connectMode = true;
+        document.getElementById('connect-bar').style.display = 'block';
+    }
+
+    function exitConnectMode() {
+        state.connectMode = false;
+        document.getElementById('connect-bar').style.display = 'none';
+        connectLine.style('display', 'none');
+        deselect();
+    }
+
+    function deleteSelected() {
+        if (!state.selectedNode || state.selectedNode.type !== 'word') return;
+        const id = state.selectedNode.id;
+        state.nodes = state.nodes.filter(n => n.id !== id);
+        state.links = state.links.filter(l => srcId(l) !== id && tgtId(l) !== id);
+        deselect();
+        updateGraph();
+        simulation.alpha(0.3).restart();
+    }
+
+    // ---- Add word ----
+    function addWord() {
+        const input = document.getElementById('word-input');
+        const word = input.value.trim();
+        if (!word) return;
+        const cat = document.getElementById('category-select').value;
+        // Prevent duplicate words in the same category
+        if (state.nodes.some(n => n.type === 'word' && n.label.toLowerCase() === word.toLowerCase() && n.category === cat)) {
+            input.value = '';
+            input.focus();
+            return;
+        }
+        addWordNode(word, cat);
+        input.value = '';
+        input.focus();
+    }
+
+    function addWordNode(label, category, animate = true) {
+        const id = 'w' + state.nextId++;
+        const cp = catPos(category);
+        const existingCount = state.nodes.filter(n => n.type === 'word' && n.category === category).length;
+        const a = Math.random() * Math.PI * 2;
+        const baseD = 50 + Math.min(existingCount * 6, 120);
+        const d = baseD + Math.random() * 50;
+        state.nodes.push({
+            id, type: 'word', label, category,
+            x: cp.x + Math.cos(a) * d,
+            y: cp.y + Math.sin(a) * d
+        });
+        state.links.push({ source: id, target: 'cat-' + category, type: 'category' });
+        updateGraph();
+        if (animate) simulation.alpha(0.5).restart();
+        return id;
+    }
+
+    function addManualLinkById(id1, id2) {
+        const exists = state.links.some(l =>
+            l.type === 'manual' &&
+            ((srcId(l) === id1 && tgtId(l) === id2) || (srcId(l) === id2 && tgtId(l) === id1))
+        );
+        if (exists) return;
+        state.links.push({ source: id1, target: id2, type: 'manual' });
+        updateGraph();
+        simulation.alpha(0.3).restart();
+    }
+
+    function addManualLinkByLabel(label1, label2) {
+        const n1 = state.nodes.find(n => n.label === label1);
+        const n2 = state.nodes.find(n => n.label === label2);
+        if (n1 && n2) state.links.push({ source: n1.id, target: n2.id, type: 'manual' });
+    }
+
+    // ---- Dynamic Categories ----
+    function showAddCategory() {
+        document.getElementById('cat-overlay').style.display = 'block';
+        document.getElementById('cat-modal').style.display = 'block';
+        const inp = document.getElementById('cat-name-input');
+        inp.value = '';
+        inp.focus();
+    }
+    function hideAddCategory() {
+        document.getElementById('cat-overlay').style.display = 'none';
+        document.getElementById('cat-modal').style.display = 'none';
+    }
+    function addCategory() {
+        const inp = document.getElementById('cat-name-input');
+        const name = inp.value.trim();
+        if (!name) return;
+        const key = name.toLowerCase().replace(/[^a-zäöüß0-9]/g, '-').replace(/-+/g, '-');
+        if (CATEGORIES[key]) { hideAddCategory(); return; } // already exists
+
+        // Add to CATEGORIES and recalculate all angles
+        CATEGORIES[key] = { label: name };
+        redistributeAngles();
+        rebuildCategorySelect();
+
+        // Create the category node + structural link
+        const p = catPos(key);
+        state.nodes.push({ id: 'cat-' + key, type: 'category', label: name, category: key, x: p.x, y: p.y });
+        state.links.push({ source: 'center', target: 'cat-' + key, type: 'structural' });
+
+        // Update existing category node pull targets (angles shifted)
+        updateGraph();
+        simulation.alpha(0.8).restart();
+        hideAddCategory();
+    }
+    // Enter key in category name input
+    document.getElementById('cat-name-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addCategory(); }
+        if (e.key === 'Escape') hideAddCategory();
+    });
+
+    // ---- Keyboard ----
+    document.addEventListener('keydown', e => {
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+            if (e.key === 'Enter' && e.target.id === 'word-input') { e.preventDefault(); addWord(); }
+            if (e.key === 'Escape') e.target.blur();
+            return;
+        }
+        if (e.key === 'Escape') { state.connectMode ? exitConnectMode() : deselect(); }
+        if (e.key === 'c' && state.selectedNode && !state.connectMode) startConnect();
+        if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedNode) deleteSelected();
+    });
+
+    // ---- Bulk Import ----
+    function showBulkImport() {
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('bulk-modal').style.display = 'block';
+        document.getElementById('bulk-text').focus();
+    }
+    function hideBulkImport() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('bulk-modal').style.display = 'none';
+    }
+
+    function bulkImport() {
+        const text = document.getElementById('bulk-text').value;
+        const lines = text.split('\n').filter(l => l.trim());
+        // Build map dynamically from all known categories
+        const map = {};
+        for (const [key, cat] of Object.entries(CATEGORIES)) {
+            map[key] = key;
+            map[cat.label.toLowerCase()] = key;
+        }
+        let added = 0;
+        for (const line of lines) {
+            const ci = line.indexOf(':');
+            if (ci === -1) continue;
+            const catKey = line.substring(0, ci).trim().toLowerCase();
+            let cat = map[catKey];
+            // If category doesn't exist yet, auto-create it
+            if (!cat) {
+                const rawName = line.substring(0, ci).trim();
+                const newKey = rawName.toLowerCase().replace(/[^a-zäöüß0-9]/g, '-').replace(/-+/g, '-');
+                if (!CATEGORIES[newKey]) {
+                    CATEGORIES[newKey] = { label: rawName };
+                    redistributeAngles();
+                    rebuildCategorySelect();
+                    const p = catPos(newKey);
+                    state.nodes.push({ id: 'cat-' + newKey, type: 'category', label: rawName, category: newKey, x: p.x, y: p.y });
+                    state.links.push({ source: 'center', target: 'cat-' + newKey, type: 'structural' });
+                }
+                cat = newKey;
+                // Update map so subsequent lines with this category are found
+                map[newKey] = newKey;
+                map[rawName.toLowerCase()] = newKey;
+            }
+            const words = line.substring(ci + 1).split(',').map(w => w.trim()).filter(Boolean);
+            for (const w of words) {
+                if (!state.nodes.some(n => n.type === 'word' && n.label.toLowerCase() === w.toLowerCase() && n.category === cat)) {
+                    addWordNode(w, cat, false);
+                    added++;
+                }
+            }
+        }
+        hideBulkImport();
+        document.getElementById('bulk-text').value = '';
+        if (added > 0) { updateGraph(); simulation.alpha(0.8).restart(); }
+    }
+
+    // ---- Export PNG ----
+    function exportPNG() {
+        const svgEl = document.getElementById('graph');
+        const clone = svgEl.cloneNode(true);
+        // Inline computed styles for export
+        clone.querySelectorAll('.node text').forEach(t => {
+            t.setAttribute('font-family', "'Mont AS', 'Helvetica Neue', Arial, sans-serif");
+        });
+        const data = new XMLSerializer().serializeToString(clone);
+        const svgBlob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        const canvas = document.createElement('canvas');
+        canvas.width = W * 2;
+        canvas.height = H * 2;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        ctx.fillStyle = C_BG;
+        ctx.fillRect(0, 0, W, H);
+        const img = new Image();
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, W, H);
+            URL.revokeObjectURL(url);
+            const a = document.createElement('a');
+            a.download = 'claim-universe-' + new Date().toISOString().slice(0, 10) + '.png';
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+        };
+        img.src = url;
+    }
+
+    // ---- Export / Import JSON ----
+    function exportJSON() {
+        const data = {
+            categories: Object.fromEntries(Object.entries(CATEGORIES).map(([k, v]) => [k, { label: v.label }])),
+            nodes: state.nodes.map(n => ({ id: n.id, type: n.type, label: n.label, category: n.category, x: n.x, y: n.y, fx: n.fx, fy: n.fy })),
+            links: state.links.map(l => ({ source: srcId(l), target: tgtId(l), type: l.type })),
+            nextId: state.nextId,
+            exported: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.download = 'claim-universe-' + new Date().toISOString().slice(0, 10) + '.json';
+        a.href = URL.createObjectURL(blob);
+        a.click();
+    }
+
+    function importJSON() { document.getElementById('json-input').click(); }
+
+    document.getElementById('json-input').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                // Restore categories from JSON (or rebuild from category nodes)
+                if (data.categories) {
+                    // Clear existing and load saved categories
+                    for (const k of Object.keys(CATEGORIES)) delete CATEGORIES[k];
+                    for (const [k, v] of Object.entries(data.categories)) {
+                        CATEGORIES[k] = { label: v.label };
+                    }
+                } else {
+                    // Fallback: rebuild CATEGORIES from category nodes in the data
+                    const catNodes = (data.nodes || []).filter(n => n.type === 'category');
+                    for (const cn of catNodes) {
+                        if (!CATEGORIES[cn.category]) {
+                            CATEGORIES[cn.category] = { label: cn.label };
+                        }
+                    }
+                }
+                redistributeAngles();
+                rebuildCategorySelect();
+                state.nodes = data.nodes || [];
+                state.links = data.links || [];
+                state.nextId = data.nextId || 100;
+                state.selectedNode = null;
+                state.connectMode = false;
+                focusedCluster = null;
+                const center = state.nodes.find(n => n.type === 'center');
+                if (center) { center.fx = W / 2; center.fy = H / 2; }
+                updateGraph();
+                simulation.alpha(1).restart();
+            } catch { alert('JSON konnte nicht gelesen werden.'); }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    });
+
+    // ---- Photo Drop Reference ----
+    let dragCounter = 0;
+    document.addEventListener('dragenter', e => { e.preventDefault(); dragCounter++; document.body.classList.add('dragover'); });
+    document.addEventListener('dragleave', e => { dragCounter--; if (dragCounter <= 0) { dragCounter = 0; document.body.classList.remove('dragover'); } });
+    document.addEventListener('dragover', e => e.preventDefault());
+    document.addEventListener('drop', e => {
+        e.preventDefault();
+        dragCounter = 0;
+        document.body.classList.remove('dragover');
+        const file = (e.dataTransfer.files || [])[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = ev => showPhoto(ev.target.result);
+        reader.readAsDataURL(file);
+    });
+
+    function showPhoto(src) {
+        let c = document.getElementById('photo-wrap');
+        if (c) c.remove();
+        c = document.createElement('div');
+        c.id = 'photo-wrap';
+        c.style.cssText = 'position:fixed;z-index:5;cursor:move;left:32px;top:' + (H / 2 - 160) + 'px;';
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = 'max-width:340px;max-height:340px;opacity:0.25;display:block;border:1px solid #282828;border-radius:6px;pointer-events:none;';
+        const btn = document.createElement('button');
+        btn.textContent = '\u00d7';
+        btn.style.cssText = 'position:absolute;top:-10px;right:-10px;width:26px;height:26px;background:#222;border:1px solid #333;color:#fff;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;';
+        btn.onclick = () => c.remove();
+        c.appendChild(img);
+        c.appendChild(btn);
+        document.body.appendChild(c);
+        // Draggable
+        let drag = false, ox, oy;
+        c.addEventListener('mousedown', e => {
+            if (e.target === btn) return;
+            drag = true; ox = e.clientX - c.offsetLeft; oy = e.clientY - c.offsetTop;
+            e.preventDefault();
+        });
+        window.addEventListener('mousemove', e => { if (drag) { c.style.left = (e.clientX - ox) + 'px'; c.style.top = (e.clientY - oy) + 'px'; } });
+        window.addEventListener('mouseup', () => { drag = false; });
+    }
+
+    // ---- Resize ----
+    window.addEventListener('resize', () => {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        svg.attr('width', W).attr('height', H);
+        const center = state.nodes.find(n => n.type === 'center');
+        if (center) { center.fx = W / 2; center.fy = H / 2; }
+        svg.select('circle[fill="url(#centerGlow)"]').attr('cx', W / 2).attr('cy', H / 2);
+        drawGuides();
+        // Update cluster targets for new viewport dimensions
+        simulation.force('clusterX').x(d => clusterTarget(d).x);
+        simulation.force('clusterY').y(d => clusterTarget(d).y);
+        simulation.alpha(0.5).restart();
+    });
+
+    // ---- Initialize ----
+    function init() {
+        rebuildCategorySelect();
+
+        // Center
+        state.nodes.push({
+            id: 'center', type: 'center', label: 'Strategische\nPartnerschaften',
+            category: null, fx: W / 2, fy: H / 2
+        });
+
+        // Categories
+        for (const [key, cat] of Object.entries(CATEGORIES)) {
+            const p = catPos(key);
+            state.nodes.push({ id: 'cat-' + key, type: 'category', label: cat.label, category: key, x: p.x, y: p.y });
+            state.links.push({ source: 'center', target: 'cat-' + key, type: 'structural' });
+        }
+
+        // Pre-seeded words (from actual WS2 whiteboard)
+        const seeds = {
+            versprechen: ['More than Media', 'Exklusivität', 'Gemeinsames Abenteuer'],
+            reichweite: ['Vernetzung', 'Berührungspunkte', 'Starkes Netzwerk', 'Media Power'],
+            kommunikation: ['Selbstbewusst', 'Ins Gespräch gehen', 'Augenhöhe', 'Top Level Management']
+        };
+        for (const [cat, words] of Object.entries(seeds)) {
+            for (const w of words) addWordNode(w, cat, false);
+        }
+
+        // Pre-connections (cross-category bridges to demonstrate the concept)
+        addManualLinkByLabel('More than Media', 'Media Power');
+        addManualLinkByLabel('Exklusivität', 'Top Level Management');
+        addManualLinkByLabel('Augenhöhe', 'Berührungspunkte');
+
+        updateGraph();
+        simulation.alpha(1).restart();
+    }
+
+    // Start only after password gate is passed
+    if (sessionStorage.getItem('cu-auth') === '1') {
+        init();
+    } else {
+        window.addEventListener('cu-unlocked', () => init());
+    }
+    </script>
+</body>
+</html>

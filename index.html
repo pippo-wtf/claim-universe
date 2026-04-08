@@ -361,6 +361,9 @@
             Ziehen · Klicken · C = Verbinden · Größer = mehr Verbindungen
         </div>
         <div class="export-row">
+            <button class="btn-small" id="btn-undo" onclick="undo()" style="opacity:0.3;" title="Rückgängig (⌘Z)">↩ Undo</button>
+            <button class="btn-small" id="btn-redo" onclick="redo()" style="opacity:0.3;" title="Wiederholen (⌘⇧Z)">↪ Redo</button>
+            <span style="border-left:1px solid #282828;height:16px;margin:0 2px;"></span>
             <button class="btn-small" onclick="resetGraph()" style="border-color:#ff3333;color:#ff3333;">Reset</button>
             <button class="btn-small" onclick="shuffle()" style="border-color:#7C3AED;color:#7C3AED;">Neu mischen</button>
             <button class="btn-small" onclick="exportPNG()">PNG</button>
@@ -1420,6 +1423,64 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
     let syncPaused = false; // prevent echo when we receive our own update
 
     // Serialize current graph state to a plain object
+    // ---- Undo / Redo ----
+    const history = [];
+    let historyIndex = -1;
+    const MAX_HISTORY = 50;
+    let historyPaused = false;
+
+    function pushHistory() {
+        if (historyPaused) return;
+        const snap = JSON.stringify(getSnapshot());
+        // Don't push if identical to current
+        if (historyIndex >= 0 && history[historyIndex] === snap) return;
+        // Truncate any redo states
+        history.splice(historyIndex + 1);
+        history.push(snap);
+        if (history.length > MAX_HISTORY) history.shift();
+        historyIndex = history.length - 1;
+        updateUndoRedoButtons();
+    }
+
+    function undo() {
+        if (historyIndex <= 0) return;
+        historyIndex--;
+        historyPaused = true;
+        loadSnapshot(JSON.parse(history[historyIndex]));
+        historyPaused = false;
+        saveToCloud();
+        updateUndoRedoButtons();
+    }
+
+    function redo() {
+        if (historyIndex >= history.length - 1) return;
+        historyIndex++;
+        historyPaused = true;
+        loadSnapshot(JSON.parse(history[historyIndex]));
+        historyPaused = false;
+        saveToCloud();
+        updateUndoRedoButtons();
+    }
+
+    function updateUndoRedoButtons() {
+        const u = document.getElementById('btn-undo');
+        const r = document.getElementById('btn-redo');
+        if (u) u.style.opacity = historyIndex > 0 ? '1' : '0.3';
+        if (r) r.style.opacity = historyIndex < history.length - 1 ? '1' : '0.3';
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+            e.preventDefault();
+            undo();
+        }
+        if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
+            e.preventDefault();
+            redo();
+        }
+    });
+
     function getSnapshot() {
         return {
             categories: Object.fromEntries(Object.entries(CATEGORIES).map(([k, v]) => [k, { label: v.label }])),
@@ -1477,15 +1538,18 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         })
         .subscribe();
 
-    // Hook into all state-changing functions to auto-save
+    // Hook into all state-changing functions to auto-save + history
     const _origUpdateGraph = updateGraph;
     let graphDirty = false;
     updateGraph = function() {
         _origUpdateGraph();
-        // Mark dirty — save after simulation settles
         if (!graphDirty) {
             graphDirty = true;
-            setTimeout(() => { graphDirty = false; saveToCloud(); }, 600);
+            setTimeout(() => {
+                graphDirty = false;
+                pushHistory();
+                saveToCloud();
+            }, 600);
         }
     };
 

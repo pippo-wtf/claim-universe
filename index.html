@@ -275,6 +275,16 @@
         .node:active { cursor: grabbing; }
         .node-center { cursor: default; }
 
+        /* Node labels */
+        .node-label {
+            color: #fff;
+            font-family: 'Mont AS', 'Helvetica Neue', Arial, sans-serif;
+            text-align: center;
+            line-height: 1.3;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
         /* Gravitationswort pulse animation */
         @keyframes gravPulse {
             0%, 100% { opacity: 0; }
@@ -844,14 +854,14 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         if (!focusedCluster) {
             // Reset everything to full visibility
             nodeGroup.selectAll('.node').attr('opacity', 1);
-            nodeGroup.selectAll('.node text').attr('opacity', 1);
+            nodeGroup.selectAll('.node .label-fo').attr('opacity', 1);
             linkGroup.selectAll('line').attr('opacity', null);
             return;
         }
         // Dim non-cluster nodes, brighten cluster
         nodeGroup.selectAll('.node')
             .attr('opacity', d => focusedCluster.has(d.id) ? 1 : 0.12);
-        nodeGroup.selectAll('.node text')
+        nodeGroup.selectAll('.node .label-fo')
             .attr('opacity', d => focusedCluster.has(d.id) ? 1 : 0.08);
         linkGroup.selectAll('line')
             .attr('opacity', d => {
@@ -898,12 +908,12 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             .attr('fill', 'none').attr('stroke', C_BLUE).attr('stroke-width', 2.5)
             .attr('opacity', 0);
 
-        // Label
-        enter.append('text')
-            .attr('fill', '#fff')
-            .attr('text-anchor', 'middle')
-            .attr('pointer-events', 'none')
-            .attr('font-size', d => d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10);
+        // Label (foreignObject for CSS word-wrap)
+        const fo = enter.append('foreignObject')
+            .attr('class', 'label-fo')
+            .attr('pointer-events', 'none');
+        fo.append('xhtml:div')
+            .attr('class', 'node-label');
 
         // Update all
         const all = nodeGroup.selectAll('.node');
@@ -943,24 +953,17 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
                 return `drop-shadow(0 0 ${blur}px ${d.color})`;
             });
 
-        // Labels — all placed below their node, auto-wrapped
-        all.select('text').each(function(d) {
-            const el = d3.select(this);
-            el.selectAll('tspan').remove();
-            const r = nodeRadius(d);
-            const fontSize = d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10;
-            const maxChars = d.type === 'center' ? 50 : d.type === 'category' ? 22 : 14;
-            const segments = d.label.split('\n');
-            const lines = segments.flatMap(seg => wrapText(seg, maxChars));
-            lines.forEach((line, i) => {
-                el.append('tspan')
-                    .attr('x', 0)
-                    .attr('dy', i === 0 ? (r + 14) + 'px' : '1.2em')
-                    .attr('font-weight', d.type === 'center' ? 700 : 400)
-                    .attr('font-size', fontSize + 'px')
-                    .text(line);
-            });
-        });
+        // Labels — foreignObject with CSS max-width for natural word wrapping
+        const labelW = d => d.type === 'center' ? 160 : d.type === 'category' ? 130 : 100;
+        all.select('.label-fo')
+            .attr('x', d => -labelW(d) / 2)
+            .attr('y', d => nodeRadius(d) + 6)
+            .attr('width', d => labelW(d))
+            .attr('height', 60);
+        all.select('.node-label')
+            .text(d => d.label.replace('\n', ' '))
+            .style('font-size', d => (d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10) + 'px')
+            .style('font-weight', d => d.type === 'center' ? 700 : 400);
 
         // Update simulation — reinitialize cluster targets so new nodes get correct gravity
         simulation.nodes(state.nodes);

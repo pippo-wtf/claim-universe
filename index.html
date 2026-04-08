@@ -714,8 +714,8 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         // 4. COLLISION — prevent overlap with good padding
         .force('collide', d3.forceCollide().radius(d => {
             const r = nodeRadius(d);
-            const labelH = Math.min(d._labelH || 16, 50);
-            return r + labelH * 0.6 + 12;
+            const labelH = d._labelH || 16;
+            return r + labelH * 0.5 + 8;
         }).strength(0.7).iterations(2))
         .on('tick', ticked)
         // 5. SLOW SETTLE — simulation explores longer for better organic layout
@@ -734,7 +734,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
     // Cluster strength: how hard each node is pulled toward its cluster
     function clusterStrength(d) {
         if (d.type === 'center') return 0;  // center is pinned with fx/fy, no pull needed
-        if (d.type === 'category') return 0.15;  // hold circular positions firmly against collision
+        if (d.type === 'category') return 0.25;  // strong pull to hold position against collision drift
         // Words: moderate pull, weaker if they have manual connections (bridge nodes float)
         const mc = manualConns(d.id);
         return mc > 0 ? 0.02 : 0.08;
@@ -982,8 +982,8 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         simulation.force('link').links(state.links);
         simulation.force('collide').radius(d => {
             const r = nodeRadius(d);
-            const labelH = Math.min(d._labelH || 16, 50);
-            return r + labelH * 0.6 + 12;
+            const labelH = d._labelH || 16;
+            return r + labelH * 0.5 + 8;
         });
         simulation.force('clusterX').x(d => clusterTarget(d).x).strength(d => clusterStrength(d));
         simulation.force('clusterY').y(d => clusterTarget(d).y).strength(d => clusterStrength(d));

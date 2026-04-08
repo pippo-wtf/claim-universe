@@ -402,6 +402,7 @@
             <input type="range" id="ctx-size" min="5" max="80" step="1" />
         </label>
         <button class="btn-ctx" id="btn-rename" onclick="renameSelected()">Umbenennen</button>
+        <button class="btn-ctx" id="btn-detach" onclick="detachSelected()">Lösen</button>
         <button class="btn-ctx" id="btn-connect" onclick="startConnect()">Verbinden (C)</button>
         <button class="btn-ctx danger" id="btn-delete" onclick="deleteSelected()">Löschen</button>
         <button class="btn-ctx" onclick="deselect()">Esc</button>
@@ -897,11 +898,9 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             .call(drag)
             .on('click', nodeClicked)
             .on('dblclick', (event, d) => {
-                if (d.type === 'center' || d.type === 'category') {
-                    event.stopPropagation();
-                    selectNode(d);
-                    renameSelected();
-                }
+                event.stopPropagation();
+                selectNode(d);
+                renameSelected();
             });
 
         // Pulse ring (for Gravitationswörter)
@@ -1044,8 +1043,11 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         document.getElementById('ctx-name').textContent = d.label.replace('\n', ' ');
         document.getElementById('btn-delete').style.display = (d.type === 'word') ? '' : 'none';
         document.getElementById('btn-connect').style.display = (d.type === 'center') ? 'none' : '';
-        // Rename button — only for center + category nodes
-        document.getElementById('btn-rename').style.display = (d.type === 'center' || d.type === 'category') ? '' : 'none';
+        // Rename — available for all nodes
+        document.getElementById('btn-rename').style.display = '';
+        // Detach — only for word nodes that have a category link
+        const hasCatLink = d.type === 'word' && state.links.some(l => l.type === 'category' && (srcId(l) === d.id || tgtId(l) === d.id));
+        document.getElementById('btn-detach').style.display = hasCatLink ? '' : 'none';
         // Color picker
         const colorInput = document.getElementById('ctx-color');
         const defaultColor = d.type === 'center' ? C_BLUE_BRIGHT : d.type === 'category' ? C_BLUE : C_BLUE_DIM;
@@ -1084,6 +1086,20 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         state.nodes = state.nodes.filter(n => n.id !== id);
         state.links = state.links.filter(l => srcId(l) !== id && tgtId(l) !== id);
         deselect();
+        updateGraph();
+        simulation.alpha(0.3).restart();
+    }
+
+    // ---- Detach from category ----
+    function detachSelected() {
+        if (!state.selectedNode || state.selectedNode.type !== 'word') return;
+        const id = state.selectedNode.id;
+        // Remove the category link
+        state.links = state.links.filter(l => !(l.type === 'category' && (srcId(l) === id || tgtId(l) === id)));
+        // Clear the node's category so cluster gravity doesn't pull it back
+        state.selectedNode.category = null;
+        // Hide detach button
+        document.getElementById('btn-detach').style.display = 'none';
         updateGraph();
         simulation.alpha(0.3).restart();
     }

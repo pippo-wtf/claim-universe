@@ -161,6 +161,24 @@
         }
         .btn-ctx:hover { border-color: #7C3AED; }
         .btn-ctx.danger:hover { border-color: #ff3333; color: #ff3333; }
+        .ctx-color {
+            width: 32px; height: 32px;
+            border: 1px solid #282828;
+            border-radius: 6px;
+            background: #0a0a0a;
+            cursor: pointer;
+            padding: 2px;
+        }
+        .size-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .size-control input[type=range] {
+            width: 80px;
+            accent-color: #7C3AED;
+        }
 
         /* --- Connect mode bar --- */
         #connect-bar {
@@ -364,6 +382,12 @@
     <!-- Context panel -->
     <div id="context">
         <span class="node-name" id="ctx-name"></span>
+        <input type="color" id="ctx-color" class="ctx-color" title="Farbe ändern" />
+        <label class="size-control" id="ctx-size-wrap">
+            <span style="font-size:10px;color:#555;">Größe</span>
+            <input type="range" id="ctx-size" min="5" max="80" step="1" />
+        </label>
+        <button class="btn-ctx" id="btn-rename" onclick="renameSelected()">Umbenennen</button>
         <button class="btn-ctx" id="btn-connect" onclick="startConnect()">Verbinden (C)</button>
         <button class="btn-ctx danger" id="btn-delete" onclick="deleteSelected()">Löschen</button>
         <button class="btn-ctx" onclick="deselect()">Esc</button>
@@ -504,6 +528,8 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
     }
 
     function nodeRadius(d) {
+        // Manual size override takes priority
+        if (d.manualSize != null) return d.manualSize;
         if (d.type === 'center') return R_CENTER;
         if (d.type === 'category') {
             const wordCount = state.nodes.filter(n => n.type === 'word' && n.category === d.category).length;
@@ -833,7 +859,14 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         const enter = node.enter().append('g')
             .attr('class', d => 'node node-' + d.type)
             .call(drag)
-            .on('click', nodeClicked);
+            .on('click', nodeClicked)
+            .on('dblclick', (event, d) => {
+                if (d.type === 'center' || d.type === 'category') {
+                    event.stopPropagation();
+                    selectNode(d);
+                    renameSelected();
+                }
+            });
 
         // Pulse ring (for Gravitationswörter)
         enter.append('circle').attr('class', 'pulse-ring')
@@ -860,6 +893,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         all.select('.main-circle')
             .attr('r', d => nodeRadius(d))
             .attr('fill', d => {
+                if (d.color) return d.color;
                 if (d.type === 'center') return C_BLUE_BRIGHT;
                 if (d.type === 'category') return C_BLUE;
                 return C_BLUE_DIM;
@@ -872,15 +906,24 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             .attr('r', d => nodeRadius(d) + 6)
             .attr('opacity', d => state.selectedNode && state.selectedNode.id === d.id ? 1 : 0);
 
-        // Pulse ring for Gravitationswörter
+        // Pulse ring for Gravitationswörter (uses node color)
         all.select('.pulse-ring')
             .attr('r', d => nodeRadius(d) + 10)
+            .attr('stroke', d => d.color || C_BLUE)
             .attr('stroke-opacity', d => isGravitationswort(d) ? 0.5 : 0)
             .style('animation', d => isGravitationswort(d) ? 'gravPulse 2.5s ease-in-out infinite' : 'none');
 
-        // Glow filter
+        // Glow — use per-node color glow via CSS filter when custom color set, SVG filter otherwise
         all.select('.main-circle')
-            .attr('filter', d => isGravitationswort(d) ? 'url(#glow)' : 'url(#glowSoft)');
+            .attr('filter', d => {
+                if (d.color) return null; // CSS handles it
+                return isGravitationswort(d) ? 'url(#glow)' : 'url(#glowSoft)';
+            })
+            .style('filter', d => {
+                if (!d.color) return null;
+                const blur = isGravitationswort(d) ? 8 : 4;
+                return `drop-shadow(0 0 ${blur}px ${d.color})`;
+            });
 
         // Labels — all placed below their node
         all.select('text').each(function(d) {
@@ -888,7 +931,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             el.selectAll('tspan').remove();
             if (d.type === 'center') {
                 const r = nodeRadius(d);
-                const lines = ['Strategische', 'Partnerschaften'];
+                const lines = d.label.split('\n');
                 lines.forEach((line, i) => {
                     el.append('tspan')
                         .attr('x', 0)
@@ -951,6 +994,15 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         document.getElementById('ctx-name').textContent = d.label.replace('\n', ' ');
         document.getElementById('btn-delete').style.display = (d.type === 'word') ? '' : 'none';
         document.getElementById('btn-connect').style.display = (d.type === 'center') ? 'none' : '';
+        // Rename button — only for center + category nodes
+        document.getElementById('btn-rename').style.display = (d.type === 'center' || d.type === 'category') ? '' : 'none';
+        // Color picker
+        const colorInput = document.getElementById('ctx-color');
+        const defaultColor = d.type === 'center' ? C_BLUE_BRIGHT : d.type === 'category' ? C_BLUE : C_BLUE_DIM;
+        colorInput.value = d.color || defaultColor;
+        // Size slider
+        const sizeSlider = document.getElementById('ctx-size');
+        sizeSlider.value = nodeRadius(d);
         updateGraph();
     }
 
@@ -984,6 +1036,38 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         deselect();
         updateGraph();
         simulation.alpha(0.3).restart();
+    }
+
+    // ---- Color picker ----
+    document.getElementById('ctx-color').addEventListener('input', function() {
+        if (!state.selectedNode) return;
+        state.selectedNode.color = this.value;
+        updateGraph();
+    });
+
+    // ---- Size slider ----
+    document.getElementById('ctx-size').addEventListener('input', function() {
+        if (!state.selectedNode) return;
+        state.selectedNode.manualSize = parseInt(this.value);
+        updateGraph();
+        simulation.alpha(0.1).restart();
+    });
+
+    // ---- Rename ----
+    function renameSelected() {
+        if (!state.selectedNode) return;
+        const d = state.selectedNode;
+        const current = d.label.replace('\n', ' ');
+        const newName = prompt('Neuer Name:', current);
+        if (newName === null || newName.trim() === '') return;
+        d.label = d.type === 'center' ? newName.trim().replace(' ', '\n') : newName.trim();
+        // Update category label if it's a category node
+        if (d.type === 'category' && CATEGORIES[d.category]) {
+            CATEGORIES[d.category].label = newName.trim();
+            rebuildCategorySelect();
+        }
+        document.getElementById('ctx-name').textContent = newName.trim();
+        updateGraph();
     }
 
     // ---- Add word ----

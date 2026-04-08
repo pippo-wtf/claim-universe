@@ -758,7 +758,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
 
         // Rebuild center + categories
         state.nodes.push({
-            id: 'center', type: 'center', label: 'Die Premium Gruppe ist ein Zugang',
+            id: 'center', type: 'center', label: 'Die Premium Gruppe\nist ein Zugang',
             category: null, fx: W / 2, fy: H / 2
         });
         for (const [key, cat] of Object.entries(CATEGORIES)) {
@@ -950,7 +950,8 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             const r = nodeRadius(d);
             const fontSize = d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10;
             const maxChars = d.type === 'center' ? 18 : d.type === 'category' ? 16 : 14;
-            const lines = wrapText(d.label.replace('\n', ' '), maxChars);
+            const segments = d.label.split('\n');
+            const lines = segments.flatMap(seg => wrapText(seg, maxChars));
             lines.forEach((line, i) => {
                 el.append('tspan')
                     .attr('x', 0)
@@ -1475,7 +1476,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
 
         // Center
         state.nodes.push({
-            id: 'center', type: 'center', label: 'Die Premium Gruppe ist ein Zugang',
+            id: 'center', type: 'center', label: 'Die Premium Gruppe\nist ein Zugang',
             category: null, fx: W / 2, fy: H / 2
         });
 

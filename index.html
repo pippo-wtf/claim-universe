@@ -714,9 +714,9 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         // 4. COLLISION — prevent overlap with good padding
         .force('collide', d3.forceCollide().radius(d => {
             const r = nodeRadius(d);
-            const labelH = d._labelH || 20;
-            return r + labelH + 10;
-        }).strength(0.8).iterations(3))
+            const labelH = Math.min(d._labelH || 16, 50);
+            return r + labelH * 0.6 + 12;
+        }).strength(0.7).iterations(2))
         .on('tick', ticked)
         // 5. SLOW SETTLE — simulation explores longer for better organic layout
         .alphaDecay(0.008)
@@ -982,8 +982,8 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         simulation.force('link').links(state.links);
         simulation.force('collide').radius(d => {
             const r = nodeRadius(d);
-            const labelH = d._labelH || 0;
-            return r + labelH + 10;
+            const labelH = Math.min(d._labelH || 16, 50);
+            return r + labelH * 0.6 + 12;
         });
         simulation.force('clusterX').x(d => clusterTarget(d).x).strength(d => clusterStrength(d));
         simulation.force('clusterY').y(d => clusterTarget(d).y).strength(d => clusterStrength(d));

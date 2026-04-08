@@ -1000,6 +1000,18 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             .attr('transform', d => `translate(${d.x},${d.y})`);
     }
 
+    // ---- Ambient float — tiny random nudges keep nodes gently drifting ----
+    setInterval(() => {
+        state.nodes.forEach(n => {
+            if (n.type === 'center' || n._dragging) return;
+            n.vx += (Math.random() - 0.5) * 0.3;
+            n.vy += (Math.random() - 0.5) * 0.3;
+        });
+        if (simulation.alpha() < 0.02) {
+            simulation.alpha(0.02).restart();
+        }
+    }, 2000);
+
     // ---- Click ----
     function nodeClicked(event, d) {
         event.stopPropagation();

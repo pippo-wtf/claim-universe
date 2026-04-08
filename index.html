@@ -711,7 +711,12 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         .force('clusterX', d3.forceX(d => clusterTarget(d).x).strength(d => clusterStrength(d)))
         .force('clusterY', d3.forceY(d => clusterTarget(d).y).strength(d => clusterStrength(d)))
         // 4. COLLISION — prevent overlap with good padding
-        .force('collide', d3.forceCollide().radius(d => nodeRadius(d) + 22).strength(0.7).iterations(2))
+        .force('collide', d3.forceCollide().radius(d => {
+            const r = nodeRadius(d);
+            if (d.type === 'center') return r + 50;
+            if (d.type === 'category') return r + 40;
+            return r + 28;
+        }).strength(0.7).iterations(2))
         .on('tick', ticked)
         // 5. SLOW SETTLE — simulation explores longer for better organic layout
         .alphaDecay(0.008)
@@ -959,7 +964,7 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             .attr('x', d => -labelW(d) / 2)
             .attr('y', d => nodeRadius(d) + 6)
             .attr('width', d => labelW(d))
-            .attr('height', 60);
+            .attr('height', 200);
         all.select('.node-label')
             .text(d => d.label.replace('\n', ' '))
             .style('font-size', d => (d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10) + 'px')
@@ -968,7 +973,12 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         // Update simulation — reinitialize cluster targets so new nodes get correct gravity
         simulation.nodes(state.nodes);
         simulation.force('link').links(state.links);
-        simulation.force('collide').radius(d => nodeRadius(d) + 22);
+        simulation.force('collide').radius(d => {
+            const r = nodeRadius(d);
+            if (d.type === 'center') return r + 50;
+            if (d.type === 'category') return r + 40;
+            return r + 28;
+        });
         simulation.force('clusterX').x(d => clusterTarget(d).x).strength(d => clusterStrength(d));
         simulation.force('clusterY').y(d => clusterTarget(d).y).strength(d => clusterStrength(d));
     }

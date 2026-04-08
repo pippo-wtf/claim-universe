@@ -714,10 +714,9 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
         // 4. COLLISION — prevent overlap with good padding
         .force('collide', d3.forceCollide().radius(d => {
             const r = nodeRadius(d);
-            if (d.type === 'center') return r + 50;
-            if (d.type === 'category') return r + 40;
-            return r + 28;
-        }).strength(0.7).iterations(2))
+            const labelH = d._labelH || 20;
+            return r + labelH + 10;
+        }).strength(0.8).iterations(3))
         .on('tick', ticked)
         // 5. SLOW SETTLE — simulation explores longer for better organic layout
         .alphaDecay(0.008)
@@ -972,14 +971,19 @@ Kommunikations-Level: Dialog, Begegnung" spellcheck="false"></textarea>
             .style('font-size', d => (d.type === 'center' ? 12 : d.type === 'category' ? 11 : 10) + 'px')
             .style('font-weight', d => d.type === 'center' ? 700 : 400);
 
+        // Measure actual label heights after rendering, store on node data
+        all.each(function(d) {
+            const labelDiv = d3.select(this).select('.node-label').node();
+            d._labelH = labelDiv ? labelDiv.offsetHeight || 0 : 0;
+        });
+
         // Update simulation — reinitialize cluster targets so new nodes get correct gravity
         simulation.nodes(state.nodes);
         simulation.force('link').links(state.links);
         simulation.force('collide').radius(d => {
             const r = nodeRadius(d);
-            if (d.type === 'center') return r + 50;
-            if (d.type === 'category') return r + 40;
-            return r + 28;
+            const labelH = d._labelH || 0;
+            return r + labelH + 10;
         });
         simulation.force('clusterX').x(d => clusterTarget(d).x).strength(d => clusterStrength(d));
         simulation.force('clusterY').y(d => clusterTarget(d).y).strength(d => clusterStrength(d));
